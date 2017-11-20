@@ -1,0 +1,60 @@
+c Outputting solution to console
+c This is CryptoMiniSat 2.9.11
+c compiled with gcc version 4.8.4
+c WARNING: for repeatability, setting FPU to use double precision
+c Reading file '../sample.cnf'
+c -- header says num vars:             58
+c -- header says num clauses:        1518
+c -- clauses added:            0 learnts,         1518 normals,            0 xors
+c -- vars added         58
+c Parsing time:  0.00 s
+c  N st     0         0        58      1375         0         0         0      6733         0   no data   no data  --
+c Flit:     0 Blit:      0 bXBeca:    0 bXProp:    0 Bins:      0 BRemL:      0 BRemN:      0 P:  0.0M T:  0.00
+c vivif2 --  cl tried     1375 cl rem        0 cl shrink        3 lits rem          3 time: 0.00
+c vivif2 --  cl tried        0 cl rem        0 cl shrink        0 lits rem          0 time: 0.00
+c asymm  cl-useful: 0/1375/1375 lits-rem:0 time: 0.00
+c bin-w-bin subsume rem            0 bins  time:  0.00 s
+c Removed useless bin:       0  fixed:     0  props:   0.00M  time:  0.00 s
+c lits-rem:         3  cl-subs:        4  v-elim:      0  v-fix:    0  time:  0.00 s
+c Finding binary XORs  T:     0.00 s  found:       0
+c Finding non-binary XORs:     0.00 s (found:       0, avg size: -nan)
+c calculated reachability. Time: 0.00
+c Calc default polars -  time:   0.00 s pos:      27 undec:       0 neg:      31
+c =========================================================================================
+c types(t): F = full restart, N = normal restart
+c types(t): S = simplification begin/end, E = solution found
+c restart types(rt): st = static, dy = dynamic
+c  t rt  Rest     Confl      Vars   NormCls    XorCls    BinCls   Learnts    ClLits    LtLits LGlueHist SGlueHist
+c  B st     0         0        58      1371         0         0         0      6708         0   no data   no data  --
+c  E st     5       877        52      1371         0        24       720      6706      4990   no data   no data  --
+c num threads              : 1          
+c restarts                 : 5          
+c dynamic restarts         : 0          
+c static restarts          : 5          
+c full restarts            : 0          
+c total simplify time      : 0.00       
+c learnts DL2              : 0          
+c learnts size 2           : 24         
+c learnts size 1           : 37          (63.79     % of vars)
+c filedLit time            : 0.00        (0.00      % time)
+c v-elim SatELite          : 0           (0.00      % vars)
+c SatELite time            : -0.00       (-33.33    % time)
+c v-elim xor               : 0           (0.00      % vars)
+c xor elim time            : 0.00        (0.00      % time)
+c num binary xor trees     : 0          
+c binxor trees' crown      : 0           (-nan      leafs/tree)
+c bin xor find time        : 0.00       
+c OTF clause improved      : 135         (0.15      clauses/conflict)
+c OTF impr. size diff      : 140         (1.04       lits/clause)
+c OTF cl watch-shrink      : 87          (0.10      clauses/conflict)
+c OTF cl watch-sh-lit      : 102         (1.17       lits/clause)
+c tried to recurMin cls    : 186         (21.21      % of conflicts)
+c updated cache            : 0           (0.00       lits/tried recurMin)
+c clauses over max glue    : 0           (0.00      % of all clauses)
+c conflicts                : 877         (73083.33  / sec)
+c decisions                : 990         (0.20      % random)
+c bogo-props               : 1864943     (155411916.67 / sec)
+c conflict literals        : 5735        (27.15     % deleted)
+c Memory used              : 30.54       MB
+c CPU time                 : 0.01        s
+s UNSATISFIABLE

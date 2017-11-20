@@ -1,0 +1,19 @@
+c Rsat version 3.01
+c Random seed = 91648253
+c Base unit clause learned: 0
+c Probing 255/255 variables
+c level 1
+c Finished probing in 0.0000 s, 0 implications found using 1 levels
+c Total implications found so far: 0/255
+c 
+c 
+s SATISFIABLE
+c CNF stats: (255 vars, 815 clauses)
+c Decisions: 75
+c Conflicts: 2
+c Avg lpc: 14.50
+c Max decision level: 73
+c Final decision lit size:255 (100.00 %)
+c Final stack/save sizes: 10(3.92 %)/10(3.92 %)
+c Final cdc size: 100 (39.22 %)
+c Running time: 0.00000 seconds

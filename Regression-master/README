@@ -1,0 +1,16 @@
+“Regression”
+by Joseph Egbulefu
+joseph[dot]egbulefu[at]gmail[dot]com
+
+
+Library for various regression methods: currently linear, polynomial, local regression, and robust local regression. Compilation requires boost(http://www.boost.org/) and  Rcpp (http://www.rcpp.org/) header files. Rcpp is used to aid testing. Rcpp enables easier generation of random inputs for testing and evaluation of output of fitting against R’s building regression fits.
+
+
+Can compile LocalRegression.cpp with gcc as (on MacOSX for example):
+$ g++ -std=c++11 -c LocalRegression.cpp  -I/Library/Frameworks/R.framework/Resources/include -DNDEBUG  -I/usr/local/include -I/opt/X11/include   -I/Library/Frameworks/R.framework/Versions/3.1/Resources/library/Rcpp/include  -O3 -pedantic
+
+
+Linking requires lapack and blas libraries, along with Rcpp linking procedures (http://www.rcpp.org/). On Mac OSX unit:
+$ R CMD SHLIB -o libreg.so TestSet.o Regression.o LinearRegression.o PolyRegression.o LOESSRegression.o RLOESSRegression.o -L/usr/local/lib -llapack -L/usr/local/lib -lblas -L/usr/local/gfortran/lib -lgfortran  -O3 -pedantic
+
+

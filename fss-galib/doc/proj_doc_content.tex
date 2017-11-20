@@ -1,0 +1,280 @@
+% \date{15. kvìtna 2007}
+% \setyear{2007}
+% \author{Kamil Dudka}
+% \title{Knihovna pro~práci s~objekty ve~sdílené~pamìti}
+% \FITproject{BP}
+
+\chapter{Úvod}
+Úkolem bylo vytvoøit program, který øe¹í problém \textit{splnitelnosti mno¾iny výrokových pro\-mìnných} pomocí \textit{genetického algoritmu}.
+
+Problém splnitelnosti mno¾iny výrokových promìnných je znám v literatuøe jako \textit{SAT Problém}\footnote{Název je pøevzatý z angliètiny -- SATisfiability problem.}. Jedná se o takzvaný \textit{rozhodovací problém}, jeho pøesnou definici je mo¾né nalézt v~\cite{TIN}. Rozhodovací problém je zadán mno¾inou formulí výrokové logiky. Úkolem je rozhodnout, jestli existuje takové ohodnocení výrokových promìnných, pro které jsou v¹echny formule splnìné.
+
+Algoritmus, který tento problém rozhoduje, spadá do tøídy slo¾itosti \textit{NP}. Pøesnou definici této tøídy slo¾itosti a odpovídající dùkaz opìt naleznete v \cite{TIN}. Netriviální problémy spadající do této tøídy slo¾itosti není mo¾né øe¹it bì¾nými algoritmy na souèasném HW v~rozumném èase.
+
+Tato práce se zabývá øe¹ením SAT problému pomocí tzv. \textit{genetického algoritmu}, díky kterému je mo¾né øe¹it (nìkteré) instance tohoto problému ve výraznì krat¹ím èase, ne¾ který odpovídá teoretické slo¾itosti. Nevýhodou tohoto pøístupu je, ¾e není zaruèeno, ¾e bude øe¹ení nalezeno v koneèném èase, pokud existuje\footnote{Experimentálnì v¹ak bylo zji¹tìno, ¾e pøi vhodnì zvolených parametrech, se øe¹ení \textit{vìt¹inou} najde. Za~urèitých pøedpokladù lze navíc matematicky dokázat, ¾e genetický algoritmus nalezne existující øe¹ení v~nekoneèném èase.}.
+
+Vytvoøený program doká¾e zadaný SAT problém øe¹it jak pomocí genetického algoritmu, tak pomocí bì¾ného \textit{(slepého)} algoritmu. V závìru práce jsou tyto pøístupy porovnány na rùzných instancích SAT problému. Kompletní zdrojové kódy a programovou dokumentaci je mo¾né stáhnout z \href{http://dudka.cz/fss}{{\tt http://dudka.cz/fss}}.
+
+\section{Podìkování}
+Software pou¾itý v této práci pou¾ívá knihovnu genetických algoritmù \texttt{GAlib}, kterou napsal Matthew Wall z Massachusetts Institute of Technology.
+
+\chapter{Teoretická èást}\label{theory}
+\section{Genetický algoritmus}
+Citace z \cite{Kvas}:
+\begin{quote}
+Genetický algoritmus patøí mezi základní stochastické optimalizaèní algoritmy s výraznými evoluèními rysy. V souèasnosti je nejèastìji pou¾ívaným evoluèním optimalizaèním algoritmem, se ¹irokou paletou aplikací od optimalizace vysoce multimodálních funkcí pøes kombinatorické a grafovì-teoretické problémy a¾ po~aplikace nazývané \quotedblbase{umìlý ¾ivot\textquotedblleft}.
+
+Ukazuje se, ¾e na základì analogie s evoluèními procesy probíhajícími v biologických systémech existuje alternativní mo¾nost, jak usmìrnit náhodné gene\-rování bodù k hodnotám blízkým optimálním. Právì tato analogie se stala základem \textit{genetického algoritmu}, který vylep¹uje èistý stochastický slepý algoritmus tak, ¾e poskytuje v reálném èase optimální øe¹ení.
+
+Darwinova teorie evoluce se zakládá na tezi \textit{pøirozeného výbìru}, podle které pøe¾ívají jen nejlépe pøizpùsobení jedinci populace. \textit{Reprodukcí} dvou jedincù s~vysokým \textit{fitness} dostáváme potomky, kteøí budou s vysokou pravdìpodobností dobøe pøizpùsobení na úspì¹né pøe¾ití. Pøi podrobné analýze (hlavnì matematické) se ukazuje, ¾e samotné pùsobení reprodukce není dostateènì efektivní na vznik dobøe pøizpùsobených jedincù s novými vlastnostmi, které významnì ulehèují pøe¾ití. Do evoluce ¾ivé hmoty je nutné zapojit i tzv. \textit{mutace}. Tyto mutace ovlivòují náhodným zpùsobem (kladnì nebo zápornì) genetický materiál populace jedincù.
+
+Biologická evoluce je progresivní zmìna obsahu genetické informace (\textit{genotypu}) populace v prùbìhu nìkolika generací. Zavádí se pojem \textit{fitness}, který hraje klíèovou úlohu v úvahách o genetickém algoritmu. V biologii je fitness definovaná jako relativní schopnost pøe¾ití a reprodukce genotypu v daném prostøedí. Podobnì se chápe i v umìlém ¾ivote, je to kladné èíslo pøiøazené genetické informaci repreprezentující organizmus (obvykle vyjádøené pomocí bitového øetìzce), které reprezentuje jeho relativní úspì¹nost plnit si v daném prostøedí svoje úlohy (napø. sbìr potravy) a vstupovat do reprodukce, t.j. tvoøit nové organizmy.
+\end{quote} 
+
+\section{Knihovna \texttt{GAlib}}
+\texttt{GAlib} je C++ knihovna, která obsahuje komponenty pro tvorbu genetických algoritmù. Zahrnuje nástroje pro pou¾ití genetických algoritmù k optimalizacím v rùzných C++ programech, které mohou vyu¾ívat jakoukoliv reprezentaci a genetické operátory. \texttt{GAlib} je podporován na rùzných UNIX platformách (Linux, MacOSX, SGI, Sun, HP, DEC, IBM) stejnì dobøe jako na MacOS a DOS/Windows systémech. Knihovnu lze stáhnout\\z \href{http://lancet.mit.edu/ga/}{http://lancet.mit.edu/ga/}.
+
+
+\chapter{Návrh øe¹ení}\label{design}
+Hlavním cílem návrhu byla znovupou¾itelnost\cite{Gamma}\cite{Pecin}\cite{Stroustrup}\cite{Sutter}. Vìt¹ina modulù nemá ¾ádné exter\-ní závislosti. Pokud bychom napø. místo knihovny \texttt{GAlib} chtìli pou¾ít jinou knihovnu, staèilo by nadefinovat dvì nové tøídy pracující se stávajícím objektovým modelem. Program je z hlediska návrhu dìlen do nìkolika èástí:
+\begin{itemize}
+ \item \textbf{Reprezentace problému} - modul \texttt{SatProblem}
+ \item \textbf{Abstrakce prohledávaèe, observery} - modul \texttt{SatSolver}
+ \item \textbf{Implementace prohledávaèe} - moduly \texttt{GaSatSolver} a \texttt{BlindSatSolver}
+\end{itemize}
+
+\section{Vstupních data}
+Z matematického pohledu je instance problému definována jako mno¾ina formulí výrokové logiky. Tyto formule tedy tvoøí vstupní data programu a je potøeba je programu nìjak pøedat. K tomuto úèelu byl vytvoøen jednoduchý jazyk pro zápis výrokových formulí, kterému program rozumí.
+
+Tento jazyk je podmno¾inou jazyka pro zápis logických výrazù v C++. Výrokové promìn\-né jsou pojmenovány pomocí identifikátorù. Identifikátor je jakákoliv sekvence písmen, èíslic a znaku podtr¾ítko, pøièem¾ musí zaèínat písmenem nebo podtr¾ítkem. Dále jazyk obsahuje binární operátory, unární operátor negace a závorky. Jednotlivé formule jsou od~sebe oddìleny støedníkem. Lexikální prvky jazyka jsou shrnuty v tabulce \ref{lexTable}. Stejnì jako C++ je i tento jazyk \textit{case-sensitive}.
+\begin{table}[h]
+ \begin{center}
+  \begin{small}
+  \begin{tabular}{|l|l|l|}\hline
+    Znaková reprezentace&Alternativní reprezentace&Sémantika\\\hline
+    \&&AND&konjunkce (binární operátor)\\
+    $\mid$&OR&disjunkce (binární operátor)\\
+    \begin{Large}\verb|^|\end{Large}&XOR&exclusive OR (binární operátor)\\
+    $\sim$&NOT&negace (unární operátor)\\
+    (~)&&závorky\\
+    0&FALSE&nepravda\\
+    1&TRUE&pravda\\
+    \verb|[a-zA-Z_][a-zA-Z0-9_]|&&identifikátor\\
+    ;&&støedník - oddìlovaè formulí\\\hline
+  \end{tabular} 
+  \end{small}
+ \end{center}
+ \caption{Lexikální prvky jazyka pro zápis výrokových formulí}
+ \label{lexTable}
+\end{table}
+
+\section{Interní reprezentace problému}
+Definice problému pomocí jazyka je vhodná pro u¾ivatele, ale není pøíli¹ vhodná pro zpracování genetickým algoritmem. Navíc operace vyhodnocení jednotlivých formulí je èasovì kritická èást výpoètu. Proto si program na základì vstupních dat vytváøí interní reprezentaci problému zalo¾enou na objektech C++.
+
+Diagram tøíd, které zaji¹»ují pøevod vstupních dat na interní reprezentaci, je zachycen na~obr.~\ref{parser}. Na tomto diagramu je znázornìno vyu¾ití návrhového vzoru \textit{decorator}. Výsled\-kem zpracování vstupu je mno¾ina naètených názvù promìnných a mno¾ina naètených výrokových formulí. Tato data jsou ulo¾ena v kontejnerech \texttt{VariableContainer} a \texttt{Formula\-Container}.
+\begin{figure}[h]
+  \begin{center}\includegraphics[scale=0.5]{parser.png}\end{center}
+  \caption{Zpracování vstupních dat - objektový model}\label{parser}
+\end{figure}
+
+Naèítání problému ze vstupního souboru je pova¾ováno pouze za jednu z variant, jak problém definovat. Proto je interní reprezentace dat zcela oddìlena od algoritmù, které s daty pracují. Toho je docíleno pomocí tzv. \textit{rozhraní}\footnote{Rozhraní (\textit{interface}) je z pohledu pøekladaèe C++ èistì abstraktní tøída (\textit{pure virtual}).}. Rozhraní \texttt{IFormulaEvaluator} pøedstavuje vyhodnotitelnou výrokovou formuli a rozhraní \texttt{ISatItem} její ohodnocení. Defi\-nici problému jako celek zpøístupòuje objekt \textit{SatProblem} (návrhový vzor \textit{Facade}). Situace je znázornìna na diagramu \ref{SatProblem}.
+\begin{figure}[h]
+  \begin{center}\includegraphics[scale=0.5]{SatProblem.png}\end{center}
+  \caption{Interní reprezentace SAT problému - objektový model}\label{SatProblem}
+\end{figure}
+
+
+\section{Abstrakce prohledávaèe}
+Jak bylo naznaèeno v úvodu, program umo¾òuje øe¹it daný SAT problém dvìma zpùsoby -- pomocí genetického algoritmu a pomocí slepého prohledávaèe. Abstraktní tøída \texttt{Abstract\-SatSolver} definuje spoleèné rozhraní pro oba prohledávaèe. Tuto tøídu lze také pou¾ít jako bázovou tøídu pro definici jakéhokoliv prohledávaèe, napø. pro vyu¾ití jiné knihovny ne¾ je \texttt{GAlib}.
+
+Definice spoleèného rozhraní je dùle¾itá pro spolupráci s \textit{observery}. Observery jsou objekty, které mohou sledovat aktuální stav prohledávaèe a nìjak reagovat na zmìny tohoto stavu -- napø. tím, ¾e vypisují informace o prùbìhu prohledávání, nebo vyhodnocují podmínky pro zastavení prohledávaèe.
+
+Tøída \texttt{AbstractSatSolver} proto implementuje nìkolik rozhraní, které mohou observery vyu¾ívat pøi práci s prohledávaèem. Nejdùle¾itìj¹í z nich je rozhraní \texttt{ISubject} na samém vrcho\-lu hierarchie dìdiènosti, které umo¾òuje jednotlivé observery k prohledávaèi pøipojovat. Hierarchie dìdiènosti je znázornìna na obr. \ref{ASSinheritance}.
+\begin{figure}[h]
+  \begin{center}\includegraphics[scale=0.5]{ASSinheritance.png}\end{center}
+  \caption{Hierarchie dìdiènosti tøídy \texttt{AbstractSatSolver}}\label{ASSinheritance}
+\end{figure}
+
+\section{Observery}
+Observery jsou navr¾eny tak, aby byly pokud mo¾no nezávislé na konkrétním typu prohle\-dávaèe. Observery implementované v souèasné verzi aplikace se starají pouze o výpis potøeb\-ných informací do konzole a pøípadné ukonèení prohledávání pøi splnìní u¾ivatelem definovaných podmínek. Spolupráci prohledávaèe s observery znázoròuje znázoròuje diagram tøíd na obr. \ref{AbstractSatSolver}. Seznam jednotlivých observerù je uveden v tabulce \ref{tabObservers}.
+\begin{figure}[h]
+  \begin{center}\includegraphics[scale=0.5]{SatSolver.png}\end{center}
+  \caption{Spolupráce prohledávaèe s observery}\label{AbstractSatSolver}
+\end{figure}
+\begin{table}[h]
+ \begin{center}
+  \begin{small}
+  \begin{tabular}{|r|l|}\hline
+    Tøída&Chování\\\hline
+    \texttt{TimedStop}&Zastaví prohledávání po uplynutí pøedem daného èasu.\\
+    \texttt{SolutionsCountStop}&Zastaví prohledávání, pokud je nalezen po¾adovaný poèet øe¹ení.\\
+    \texttt{ProgressWatch}&Prùbì¾nì vypisuje informace o prùbìhu prohledávání.\\
+    \texttt{ResultsWatch}&Prùbì¾nì vypisuje nalezená øe¹ení.\\
+    \texttt{FitnessWatch}&Zobrazuje informace, pokud bylo nalezeno ohodnocení s vy¹¹í hodnotou \textit{fitness}.\\\hline
+  \end{tabular} 
+  \end{small}
+ \end{center}
+ \caption{Seznam observerù a jejich chování}
+ \label{tabObservers}
+\end{table}
+
+Pro jednodu¹¹í práci s observery byla vytvoøena C++ ¹ablona, která observer vytvoøí s~po¾adovanými parametry a zároveò jej pøipojí ke sledovanému objektu:
+\begin{verbatim}
+// Create observer OBSERVER and attach it to subject
+template <
+    class OBSERVER,
+    class SUBJECT,
+    class ARG>
+inline OBSERVER* createAttached(SUBJECT *subject, ARG &arg) {
+  OBSERVER *observer= new OBSERVER(subject, arg);
+  subject->addObserver(observer);
+  return observer;
+}
+\end{verbatim}
+
+Samotný zápis kódu pøidávající jednotlivé observery pak vypadá mnohem pøehlednìji, pøièem¾ není nijak omezeno pùvodní rozhraní observeru. Lze tedy kombinovat oba dva zpùsoby pøipojení observeru:
+\begin{verbatim}
+// attach progress indicator
+const int progressBits = satProblem->getVarsCount()-stepWidth;
+if (progressBits > 0) {
+  progressWatch = new ProgressWatch(satSolver, 1<<progressBits, std::cout);
+  satSolver->addObserver(progressWatch);
+}
+
+// Display message if maxFitness is increased
+fitnessWatch = createAttached<FitnessWatch>(satSolver, std::cout);
+\end{verbatim} 
+
+
+\section{Jednotlivé implementace prohledávaèe}
+Jak bylo zmínìno v úvodu, program poskytuje dvì implementace prohledávaèe, mezi kterými lze pøepínat -- slepý prohledávaè a prohledávaè vyu¾ívající genetický algoritmus. V tabul\-ce~\ref{tabAdvantages} jsou shrnuty výhody a nevýhody obou implementací. Tøídy implementující tyto prohledávaèe se jmenují \texttt{BlindSatSolver} a \texttt{GaSatSolver}.
+\begin{table}[h]
+ \begin{center}
+  \begin{scriptsize}
+  \begin{tabular}{|l|l|}\hline
+    Slepý prohledávaè&GA prohledávaè\\\hline
+    \texttt{+} doká¾e nalézt v¹echna existující øe¹ení&\texttt{-} není zaruèeno, ¾e najde v¹echna øe¹ení\\
+    \texttt{+} èas potøebný k prohledávání lze spoèítat pøedem&\texttt{-} nelze obecnì definovat podmínky zastavení\\
+    \texttt{-} vhodný pouze pro triviální problémy&\texttt{+} doká¾e øe¹it slo¾ité problémy na bì¾né arch.\\
+    \texttt{-} asymptotická èasová slo¾itost je exponenciální&\texttt{+} vìt¹inou nalezne øe¹ení velmi rychle, pokud existuje\\
+    \texttt{-} poèet promìnných je omezen architekturou poèítaèe&\texttt{-} pro urèité tøídy problémù je potøeba upravit øídící parametry\\\hline
+  \end{tabular} 
+  \end{scriptsize}
+ \end{center}
+ \caption{Srovnání výhod a nevýhod obou implementací prohledávaèù}
+ \label{tabAdvantages}
+\end{table}
+
+Implementace slepého prohledávaèe je velmi jednoduchá. Ohodnocení jednotli\-vých pro\-mìnných se ukládá jako celé èíslo. Tím je zaruèeno efektivní zpracování pomocí aritmetických a bitových operací nad tímto typem. Prohledávací smyèka provádí pouze inkrementaci tohoto èísla a vyhodnocení výrokových formulí. Poèet výrokových promìnných je v tomto pøípadì omezen pøibli¾nì na \texttt{sizeof(long)} dané architektury. To v¹ak v praxi pøíli¹ nevadí, proto¾e pro slo¾itìj¹í problémy je slepý prohledávaè stejnì nepou¾itelný.
+
+Tøída \texttt{GaSatSolver} funguje jako propojení knihovny \texttt{GAlib} se zbytkem programu.\\ Na~obr.~\ref{GaSatSolver} je znázornìn graf spolupráce této tøídy. Tato tøída pouze implementuje rozhraní prohledávaèe pomocí tøíd knihovny \texttt{GAlib}. Pou¾ívá genetický algoritmus definovaný tøídou \texttt{GASimpleGA}. Bìhem experimentù byly porovnávány i jiné algoritmy - viz. kapitola \ref{results}. Pro pou¾ití jiného algoritmu staèí (díky kvalitnímu objektovému modelu knihovny \texttt{GAlib}) zmìnit jediný øádek v programu\footnote{Nebyl by problém zmìnit program tak, aby bylo mo¾né jednotlivé genetické algoritmy pøepínat za bìhu. Experimenty v¹ak ukázaly, ¾e to samo o sobì nepøinese velký u¾itek.}.
+\begin{figure}[h]
+  \begin{center}\includegraphics[scale=0.5]{GaSatSolver.png}\end{center}
+  \caption{Graf spolupráce tøídy \texttt{GaSatSolver}}\label{GaSatSolver}
+\end{figure}
+
+Pro kódování chromozómu byla pou¾ita tøída \texttt{GA1DBinaryStringGenome}, která kóduje jedince jako jednorozmìrné bitové øetìzce. K zji¹tìní hodnoty \textit{fitness} jedince je potøeba provést nad ním vyhodnocení v¹ech formulí -- je tedy potøeba tyto objekty \textit{obalit}, aby implementovali døíve definované rozhraní \texttt{ISatItem}. K tomu slou¾í tøídy \texttt{GaSatItem} a~\texttt{SatItem\-GalibAdatper}, pøièem¾ druhá z nich pracuje pouze s odkazem na objekty knihovny \texttt{GAlib} (z~dùvodu optimalizace). Plnohodnotná implementace je zase potøeba pro tvoøení kontej\-nerù (mno¾ina, vektor, ...).
+
+Hodnota \textit{fitness} se poèítá podle následujícího vztahu:
+\begin{displaymath}
+fitness=\frac{satisfied~formula~count}{total~formula~count}
+\end{displaymath}
+Hodnota tedy le¾í v intervalu $\langle0,1\rangle$. $0$ znamená, ¾e není splnìna ani jedna formule, $1$ znamená, ¾e jsou splnìny v¹echny formule (nalezeno øe¹ení).
+
+Nalezená øe¹ení jsou ukládána vnì knihovny \texttt{GAlib} pomocí kontejneru \textit{mno¾ina} -- tøídy \texttt{SatItemSet}. Tento kontejner zajistí, aby ka¾dé ohodnocení promìnných (nalezené øe¹ení) bylo v kontejneru právì jednou. Tím lze sledovat celkový poèet nalezených (navzájem rùzných) øe¹ení a nakonec je v¹echny vypsat.
+
+
+\chapter{Implementace}\label{implementation}
+Program je implementovaný v jazyce C++, vìt¹inu jeho modulù lze kompilovat bez exter\-ních závislostí. Pouze moduly \texttt{GaSatSolver} a \texttt{fss} (modul obsahující funkci \texttt{main}) jsou závislé na knihovnì \texttt{GAlib}. Spustitelný soubor se jmenuje \texttt{fss}. Pøehled parametrù je uveden v tabulce \ref{tabArgs}. Jednotlivé parametry se zadávají v¾dy jako pár název---hodnota. Pokud zvolíte GA prohledávaè, je mo¾né zadat i dal¹í parametry, které zpracovává \texttt{GAlib} -- tyto parametry nejsou uvedeny v tabulce. Podrobnosti naleznete v dokumentaci ke knihovnì \texttt{GAlib} a její tøídì \texttt{GASimpleGA}.
+
+\begin{table}[h]
+ \begin{center}
+  \begin{small}
+  \begin{tabular}{|l|l|l|}\hline
+    Název parametru&Zkrácený název&Sémantika\\\hline
+    \texttt{input\_file}&\texttt{input}&Vstupní soubor obsahující definici SAT problému.\\
+      &&Znak \quotedblbase{-\textquotedblleft} pøedstavuje standardní vstup.\\\hline
+    \texttt{color\_output}&\texttt{color}&\texttt{1/0} zapíná/vypíná barevný konzolový výstup.\\\hline
+    \texttt{verbose\_mode}&\texttt{verbose}&\texttt{1/0} zapíná/vypíná kontrolní výstup knihovny GAlib.\\\hline
+    \texttt{blind\_solver}&\texttt{blind}&Pøepíná mezi slepým a GA prohledávaèem.\\
+      && 1 zapíná slepý prohledávaè.\\
+      && 0 zapíná GA prohledávaè (výchozí).\\\hline
+    \texttt{step\_width}&\texttt{stepw}&\textit{(jenom pro slepý prohledávaè)}\\
+      && Granularita oznamování a øízení prohledávaèe.\\
+      && Výchozí hodnota je 16.\\\hline
+    \texttt{min\_count\_of\_solutions}&\texttt{minslns}&Minimální po¾adovaný poèet øe¹ení.\\\hline
+    \texttt{max\_count\_of\_solutions}&\texttt{maxslns}&Maximální poèet hledaných øe¹ení.\\\hline
+    \texttt{max\_count\_of\_runs}&\texttt{maxruns}&Maximální poèet opakování bìhu GA,\\
+      && pokud není nalezen po¾adovaný poèet øe¹ení.\\\hline
+    \texttt{max\_time\_per\_run}&\texttt{maxtime}&Bìh je bezpodmíneènì pøeru¹en pokud je pøekroèen\\
+      && daný èas (v milisekundách).\\\hline
+    \texttt{term\_upon\_convergence}&\texttt{convterm}&\texttt{0 -> }Bìh GA je pøeru¹en po \texttt{ngen} generacích.\\
+      && \texttt{1 -> }Bìh GA je pøeru¹en podle kritéria konvergence.\\\hline
+  \end{tabular} 
+  \end{small}
+ \end{center}
+ \caption{Pøehled parametrù programu \texttt{fss}}
+ \label{tabArgs}
+\end{table}
+
+
+\section{Sestavení ze zdrojových kódù}
+Z webu projektu \href{http://dudka.cz/fss}{http://dudka.cz/fss} lze stáhnout archiv obsahující zdrojové kódy projektu spolu se zdrojovými kódy knihovny \texttt{GAlib}. Souèástí archivu je \texttt{Makefile}, který zajistí sestavení knihovny \texttt{GAlib}, pøelo¾ení zdrojového kódu aplikace a jeho slinkování s~knihovnou.
+
+Program pou¾ívá automatický \textit{build-systém} \texttt{CMake}, který detekuje závislosti mezi moduly, závislosti na systémové knihovny, pøekladaè apod. Pro distribuci Gentoo Linux lze na webu projektu stáhnout \textit{ebuild}, který zajistí automatické sta¾ení, sestavení a instalaci vèetnì v¹ech závislostí.
+
+Nedílnou souèástí dokumentace je dokumentace API, kterou lze vygenerovat pomocí programu \texttt{Doxygen} -- v¹e potøebné je v adresáøi \texttt{doc/api}. Tuto dokumentaci lze také, stejnì jako zdrojové kódy, najít na webu projektu. Na obrázku \ref{screenshot} je ukázka pou¾ití programu.
+\begin{figure}[h]
+  \begin{center}\includegraphics[scale=0.5]{screenshot.png}\end{center}
+  \caption{Ukázka pou¾ití programu}\label{screenshot}
+\end{figure}
+
+
+\chapter{Výsledky}\label{results}
+Hlavní pøeká¾kou pøi testování programu byl nedostatek testovacích dat. Jinými slovy nepodaøilo se mi sehnat vhodné zadání SAT problému, na kterém bych prohledávaè otestoval. Vytvoøil jsem si proto generátor náhodných SAT problémù -- program \texttt{fss-satgen}. Tento program je také souèástí archivu a je velmi jednoduchý. Jako parametry se mu zadají poèet výrokových promìnných a poèet formulí, které z nich má sestavit. Výstupem je mno¾ina náhodnì vygenerovaných výrokových formulí zapsaných v jazyku, kterému rozumí prohledávaè.
+
+Nevýhodou takového pøístupu je skuteènost, ¾e u takto vygenerovaného problému ne\-máme pøedem informaci o tom, jestli má nìjaké øe¹ení, popø. kolik má øe¹ení. Pro jednodu¹¹í problémy (obvykle max. 20 -- 30 výrokových promìnných) je mo¾né na problém pustit nejprve slepý prohledávaè. Výstupem slepého prohledávaèe je pøesná informace o poètu øe¹ení. Stejný problém potom mù¾eme pøedhodit GA prohledávaèi a porovnat èas, který potøebuje k jeho vyøe¹ení. Tohle byl hlavní smìr, kterým se testování ubíralo.
+
+Kromì klasického genetického algoritmu (tak jak jej implementuje \texttt{GAlib}) bylo implementováno automatické restartování bìhu GA v pøípadì, ¾e byly splnìny podmínky pro~ukonèení bìhu a zároveò nebyl nalezen po¾adovaný poèet øe¹ení. Tohle nepatrné vy\-lep¹ení se ukázalo jako velmi pøínosné pro sní¾ení èasu prohledávání.
+
+Bylo zji¹tìno, ¾e program nalezne po¾adovaný poèet øe¹ení mnohem rychleji, pokud má pøedem informaci o poètu øe¹ení. Takového chování dosáhneme specifikací parametrù \texttt{minslns} a \texttt{maxslns} (viz. obr. \ref{screenshot}). Horní ohranièení umo¾òuje zastavit GA pøi dosa¾ení daného poètu øe¹ení. Zatímco dolní ohranièení umo¾òuje restartovat bìh, pokud nevede k~cíli. Tyto parametry se obecnì mohou li¹it.
+
+Co se týká klasických parametrù GA, výraznìj¹í zlep¹ení bylo dosa¾eno upravením veli\-kosti populace pro nìkteré problémy. U problémù, které mìly hodnì øe¹ení, byla øe¹ení nalezena rychleji pøi nastavení men¹í velikosti populace. U jednoho testovaného problému, který mìl více ne¾ 12000 øe¹ení, se jako optimální hodnota ukázala velikost populace dokonce jenom 30 jedincù.
+
+Asi nejdùle¾itìj¹ím parametrem byl poèet generací jako ukonèovací kritérium bìhu. Kromì ukonèení po daném poètu generací je mo¾né ukonèit bìh podle konvergenèního kritéria tak, jak jej definuje \texttt{GAlib}. Nejzajímavìj¹í z pohledu u¾ivatele je asi ukonèení bìhu po uplynutí pøedem daného èasu. Tohle ukonèení lze kombinovat s ostatními kritérii a zaruèuje ukonèení výpoètu v u¾ivatelem stanoveném èase bez ohledu na poèet nalezených øe¹ení.
+
+Program byl testován na rùzných SAT problémech rùzné slo¾itosti -- jak poèet promìn\-ných, tak poèet formulí dosahovali øádu stovek. V tabulce \ref{tabTime} je nastínìna závislost èasu prohledávání na pou¾itých parametrech. Pro vytvoøení této tabulky byl jako vstup pou¾it jednoduchý SAT problém s 20ti promìnnými a 20ti formulemi -- díky tomu bylo mo¾né pou¾ít slepý i GA prohledávaè.
+\begin{table}[h]
+ \begin{center}
+  \begin{small}
+  \begin{tabular}{|l|r|r|}\hline
+    Parametry prohledávání&Poèet nalezených øe¹ení&Doba prohledávání\\\hline
+    \textit{bez parametru}&3 -- 6&1.29 s\\
+    \texttt{ngen 500}&5 -- 6&2.58 s\\
+    \texttt{minslns 6}&6&1.29 -- 5.19 s\\
+    \texttt{minslns 6 maxslns 6}&6&0.60 -- 5.19 s\\
+    \texttt{minslns 6 maxslns 6 time 1000 maxruns 1}&0 -- 6&0.60 -- 1.01 s\\\hline
+    \texttt{blind 1}&6&116.07 s\\
+    \texttt{blind 1 maxslns 6}&6&92.03 s\\
+    \texttt{blind 1 maxtime 60000 stepw 10}&4&60.12 s\\\hline
+  \end{tabular} 
+  \end{small}
+ \end{center}
+ \caption{Závislost doby prohledávání na parametrech}
+ \label{tabTime}
+\end{table}
+
+
+\chapter{Závìr}
+Cílem návrhu bylo vytvoøit znovupou¾itelné komponenty pro øe¹ení SAT problému. Tyto komponenty byly propojeny s ji¾ hotovou a odladìnou knihovnou \texttt{GAlib} a tím bylo dosa¾eno vysoké efektivity øe¹ení SAT problému pomocí genetického algoritmu. Za nejvýznamnìj¹í výsledky práce pova¾uji srovnání bì¾ného postupu øe¹ení s GA z hlediska èasové nároènosti a pou¾itelnosti pro daný problém.
+
+Ukázalo se, ¾e pomocí GA je mo¾né øe¹it problémy, které by jinak nebyly vùbec øe¹itelné na souèasném HW. Kromì toho vznikla plnohodnotná aplikace, která umo¾òuje SAT problé\-my øe¹it. Nezanedbatelný je i mùj osobní pøínos -- seznámení se s knihovnou \texttt{GAlib}, která má mnohem ¹ir¹í obor vyu¾ití, ne¾ kterým se zabývá tato práce.
+
+% ----------------------------------------------
+% Pou¾itá literatura
+\bibliographystyle{./czechiso}
+\begin{flushleft}
+\bibliography{proj_doc}
+\end{flushleft}
+
+\end{document}
